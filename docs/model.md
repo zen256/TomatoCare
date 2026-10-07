@@ -37,7 +37,7 @@
 
 В скрипте не зафиксирован random seed, поэтому повторный запуск даст близкие, но не идентичные результаты.
 
-Зависимости обучения: `torch`, `torchvision`, `scikit-learn`, `matplotlib`. Точные версии зафиксируйте командой `pip freeze` и сохраните в `ml/requirements.txt`.
+Зависимости обучения: `torch`, `torchvision`, `scikit-learn`, `matplotlib`.
 
 ## Результаты
 
@@ -57,7 +57,6 @@
 | `efficientnet_b0_best.pth` | веса PyTorch: `model_state_dict`, список классов, размер изображения |
 | `efficientnet_b0.onnx` | модель для приложения (`app/src/main/assets/`) |
 | `classes.json` | названия классов в порядке выходов модели |
-| `efficientnet_b0_loss.png`, `efficientnet_b0_accuracy.png` | графики обучения |
 
 ## Экспорт в ONNX
 
