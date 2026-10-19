@@ -31,3 +31,6 @@ Thumbs.db
 
 # Dataset
 ml/tomato/dataset/
+ml/corn/dataset/
+ml/corn/raw/
+ml/corn/real_photos/
