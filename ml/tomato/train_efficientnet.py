@@ -402,6 +402,53 @@ def main():
     print("Confusion Matrix:")
     print(cm)
 
+    fig, ax = plt.subplots(figsize=(10, 8))
+
+    image = ax.imshow(cm, interpolation="nearest", cmap="Blues")
+    fig.colorbar(image, ax=ax)
+
+    ax.set(
+        xticks=range(len(classes)),
+        yticks=range(len(classes)),
+        xticklabels=classes,
+        yticklabels=classes,
+        xlabel="Predicted label",
+        ylabel="True label",
+        title="EfficientNet-B0 Confusion Matrix"
+    )
+
+    plt.setp(
+        ax.get_xticklabels(),
+        rotation=45,
+        ha="right",
+        rotation_mode="anchor"
+    )
+
+    threshold = cm.max() / 2
+
+    for i in range(cm.shape[0]):
+        for j in range(cm.shape[1]):
+            ax.text(
+                j,
+                i,
+                str(cm[i, j]),
+                ha="center",
+                va="center",
+                color="white" if cm[i, j] > threshold else "black"
+            )
+
+    fig.tight_layout()
+
+    fig.savefig(
+        "confusion_matrix.png",
+        dpi=200,
+        bbox_inches="tight"
+    )
+
+    plt.close(fig)
+
+    print("  confusion_matrix.png")
+
     # Сохраняем классы
     with open(
         CLASSES_PATH,
