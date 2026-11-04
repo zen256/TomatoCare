@@ -2,6 +2,7 @@ package com.example.tomatocare.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -15,11 +16,24 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.foundation.layout.size
+import androidx.compose.ui.tooling.preview.Preview
+
+@Preview(showBackground = true, showSystemUi = true)
+@Composable
+fun DiseaseInfoScreenPreview() {
+    DiseaseInfoScreen(
+        diseaseName = "Common_rust",
+        onBackClick = {}
+    )
+}
 
 private data class DiseaseInfo(
     val russianName: String,
@@ -36,7 +50,7 @@ private val diseaseInfo = mapOf(
         "Грибковое заболевание кукурузы. На листьях образуются продолговатые серые или коричневатые пятна, ограниченные жилками листа. При сильном поражении пятна сливаются, а листья постепенно отмирают."
     ),
     "Northern_Leaf_Blight" to DiseaseInfo(
-        "Северный гельминтоспориоз",
+        "Северная пятнистость (гельминтоспориоз)",
         "Грибковое заболевание кукурузы. Характеризуется появлением крупных продолговатых серо-зелёных или коричневых пятен на листьях. Поражённые участки постепенно увеличиваются, из-за чего листовая поверхность высыхает."
     ),
     "Bacterial_spot" to DiseaseInfo(
@@ -44,7 +58,7 @@ private val diseaseInfo = mapOf(
         "Бактериальное заболевание томата. На листьях появляются небольшие тёмные пятна, иногда окружённые желтоватой каймой. При сильном поражении пятна увеличиваются и сливаются, повреждённые участки листьев отмирают."
     ),
     "Early_blight" to DiseaseInfo(
-        "Ранняя сухая пятнистость (альтернариоз)",
+        "Альтернариоз (ранняя пятнистость)",
         "Грибковое заболевание томата. На листьях появляются коричневые пятна с характерными концентрическими кольцами. Обычно поражение начинается с нижних листьев и постепенно распространяется вверх."
     ),
     "Late_blight" to DiseaseInfo(
@@ -52,15 +66,15 @@ private val diseaseInfo = mapOf(
         "Опасное заболевание томата, вызываемое оомицетом Phytophthora infestans. На листьях появляются крупные бурые пятна, которые быстро увеличиваются при высокой влажности. Поражённые ткани могут загнивать."
     ),
     "Leaf_Mold" to DiseaseInfo(
-        "Листовая плесень",
+        "Кладоспориоз (бурая пятнистость)",
         "Грибковое заболевание томата. На верхней стороне листьев появляются желтоватые пятна, а на нижней — оливково-зелёный или сероватый налёт. При развитии заболевания листья засыхают и опадают."
     ),
     "Septoria_leaf_spot" to DiseaseInfo(
-        "Септориоз",
+        "Септориоз (белая пятнистость)",
         "Грибковое заболевание томата. На листьях появляются многочисленные небольшие округлые пятна с тёмной каймой и светлой сероватой серединой. Чаще всего первыми поражаются нижние листья."
     ),
     "Tomato_mosaic_virus" to DiseaseInfo(
-        "Вирус табачной мозаики томата",
+        "Вирус мозаики томата",
         "Вирусное заболевание, вызывающее характерную мозаичную окраску листьев: чередование светло- и тёмно-зелёных участков. Листья могут деформироваться, а рост растения замедляется."
     ),
     "brown_rust" to DiseaseInfo(
@@ -95,12 +109,26 @@ fun DiseaseInfoScreen(
             .verticalScroll(rememberScrollState())
             .padding(horizontal = 20.dp)
     ) {
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(25.dp))
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            IconButton(onClick = onBackClick) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = "Назад",
+                    tint = Color(0xFF202320)
+                )
+            }
 
-        IconButton(onClick = onBackClick) {
-            Icon(
-                imageVector = Icons.Default.ArrowBack,
-                contentDescription = "Назад"
+            Spacer(modifier = Modifier.size(4.dp))
+
+            Text(
+                text = "О болезни",
+                fontSize = 22.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color(0xFF202320)
             )
         }
 
@@ -116,7 +144,7 @@ fun DiseaseInfoScreen(
         Spacer(modifier = Modifier.height(6.dp))
 
         Text(
-            text = diseaseName,
+            text = diseaseName.replace("_", " "),
             fontSize = 15.sp,
             color = Color(0xFF6B716B)
         )

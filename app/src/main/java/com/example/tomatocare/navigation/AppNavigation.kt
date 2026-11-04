@@ -32,16 +32,12 @@ import com.example.tomatocare.ml.AnalysisOutcome
 import com.example.tomatocare.ui.screens.AboutScreen
 import com.example.tomatocare.ui.screens.AnalysisScreen
 import com.example.tomatocare.ui.screens.CameraScreen
-import com.example.tomatocare.ui.screens.DiseaseDetailsScreen
 import com.example.tomatocare.ui.screens.HistoryScreen
 import com.example.tomatocare.ui.screens.HomeScreen
 import com.example.tomatocare.ui.screens.NoLeafResultScreen
 import com.example.tomatocare.ui.screens.ResultScreen
 import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.displayCutout
 import androidx.compose.runtime.collectAsState
-import com.example.tomatocare.data.AnalysisEntity
-import androidx.navigation.navArgument
 import android.net.Uri
 import com.example.tomatocare.ui.screens.DiseaseInfoScreen
 

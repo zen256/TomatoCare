@@ -109,7 +109,7 @@ fun HomeScreen(
         Spacer(modifier = Modifier.height(24.dp))
 
         Text(
-            text = "TomatoCare",
+            text = "AgroScan",
             fontSize = 30.sp,
             fontWeight = FontWeight.Bold,
             color = TomatoRed
