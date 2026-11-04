@@ -41,6 +41,9 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.displayCutout
 import androidx.compose.runtime.collectAsState
 import com.example.tomatocare.data.AnalysisEntity
+import androidx.navigation.navArgument
+import android.net.Uri
+import com.example.tomatocare.ui.screens.DiseaseInfoScreen
 
 private val TomatoRed = Color(0xFFB3261D)
 private val TextSecondary = Color(0xFF6B716B)
@@ -243,8 +246,8 @@ fun AppNavigation() {
                     ResultScreen(
                         analysisId = analysisId,
                         viewModel = viewModel,
-                        onDetailsClick = {
-                            navController.navigate("disease_details")
+                        onDetailsClick = { diseaseName ->
+                            navController.navigate("disease/${Uri.encode(diseaseName)}")
                         },
                         onNewPhoto = {
                             navController.navigate("camera") {
@@ -278,15 +281,31 @@ fun AppNavigation() {
                 )
             }
 
-            composable("disease_details") {
-                DiseaseDetailsScreen()
-            }
-
             composable("history") {
                 HistoryScreen(
                     viewModel = viewModel,
                     onAnalysisClick = { id ->
                         navController.navigate("result/$id")
+                    }
+                )
+            }
+
+            composable(
+                route = "disease/{diseaseName}",
+                arguments = listOf(
+                    navArgument("diseaseName") {
+                        type = NavType.StringType
+                    }
+                )
+            ) { backStackEntry ->
+                val diseaseName = backStackEntry.arguments
+                    ?.getString("diseaseName")
+                    .orEmpty()
+
+                DiseaseInfoScreen(
+                    diseaseName = diseaseName,
+                    onBackClick = {
+                        navController.popBackStack()
                     }
                 )
             }

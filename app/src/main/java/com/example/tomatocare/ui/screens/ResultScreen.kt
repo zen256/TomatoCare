@@ -80,7 +80,8 @@ fun ResultScreenPreview() {
                 labels = listOf("Late_blight", "Early_blight", "Leaf_Mold")
             )
         ),
-        bitmap = null
+        bitmap = null,
+        onDetailsClick = {}
     )
 }
 
@@ -104,7 +105,7 @@ fun ResultScreen(
     analysisId: Long,
     viewModel: TomatoViewModel,
     modifier: Modifier = Modifier,
-    onDetailsClick: () -> Unit = {},
+    onDetailsClick: (String) -> Unit,
     onNewPhoto: () -> Unit = {},
     onBack: () -> Unit = {}
 ) {
@@ -178,7 +179,7 @@ fun ResultScreen(
         outcome = outcome,
         bitmap = bitmap,
         modifier = modifier,
-        onDetailsClick = onDetailsClick,
+        onDetailsClick = { diseaseName -> onDetailsClick(diseaseName) },
         onNewPhoto = onNewPhoto,
         onBack = onBack
     )
@@ -225,7 +226,7 @@ private fun ResultContent(
     outcome: AnalysisOutcome.Leaf,
     bitmap: Bitmap?,
     modifier: Modifier = Modifier,
-    onDetailsClick: () -> Unit = {},
+    onDetailsClick: (String) -> Unit = {},
     onNewPhoto: () -> Unit = {},
     onBack: () -> Unit = {}
 ) {
@@ -321,7 +322,9 @@ private fun ResultContent(
         // Для здорового листа подробностей о болезни нет.
         if (result.className != "healthy") {
             Button(
-                onClick = onDetailsClick,
+                onClick = {
+                    onDetailsClick(result.className)
+                },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp),

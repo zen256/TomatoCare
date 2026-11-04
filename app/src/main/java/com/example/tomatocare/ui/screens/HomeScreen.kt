@@ -55,6 +55,11 @@ import androidx.activity.result.contract.ActivityResultContracts
 import com.example.tomatocare.data.AnalysisEntity
 import java.text.DateFormat
 import java.util.Date
+import coil.compose.rememberAsyncImagePainter
+import androidx.compose.ui.layout.ContentScale
+import com.example.tomatocare.data.ImageStorage
+import androidx.compose.ui.platform.LocalContext
+import com.example.tomatocare.ml.CropType
 
 import androidx.compose.ui.tooling.preview.Preview
 
@@ -239,6 +244,8 @@ private fun LastAnalysisCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
+
     Card(
         modifier = modifier.clickable(
             enabled = analysis != null,
@@ -265,12 +272,23 @@ private fun LastAnalysisCard(
                     .background(LeafLight),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(
-                    imageVector = Icons.Default.LocalFlorist,
-                    contentDescription = null,
-                    tint = LeafGreen,
-                    modifier = Modifier.size(30.dp)
-                )
+                if (analysis != null) {
+                    Image(
+                        painter = rememberAsyncImagePainter(
+                            ImageStorage.getFile(context, analysis.imagePath)
+                        ),
+                        contentDescription = "Фото анализа",
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                } else {
+                    Icon(
+                        imageVector = Icons.Default.LocalFlorist,
+                        contentDescription = null,
+                        tint = LeafGreen,
+                        modifier = Modifier.size(30.dp)
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.size(14.dp))
@@ -288,28 +306,16 @@ private fun LastAnalysisCard(
 
                     Spacer(modifier = Modifier.height(4.dp))
 
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Schedule,
-                            contentDescription = null,
-                            tint = TextSecondary,
-                            modifier = Modifier.size(15.dp)
-                        )
-
-                        Spacer(modifier = Modifier.size(5.dp))
-
-                        Text(
-                            text = "История анализов появится здесь",
-                            fontSize = 12.sp,
-                            lineHeight = 12.sp,
-                            color = TextSecondary
-                        )
-                    }
+                    Text(
+                        text = "История анализов появится здесь",
+                        fontSize = 12.sp,
+                        color = TextSecondary
+                    )
                 } else {
                     Text(
-                        text = analysis.diagnosis.replace('_', ' '),
+                        text = analysis.diagnosis.toDisplayName(
+                            CropType.valueOf(analysis.crop)
+                        ),
                         fontSize = 15.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = TextPrimary
