@@ -80,16 +80,6 @@ private val TextPrimary = Color(0xFF202320)
 private val TextSecondary = Color(0xFF6B716B)
 private val ViewfinderDark = Color(0xFF1E2A1E)
 
-/**
- * Экран «Выбор фотографии».
- *
- * @param viewfinder  сюда позже подставляется превью CameraX (PreviewView через AndroidView).
- *                    Пока по умолчанию пусто — виден тёмный фон видоискателя.
- * @param onBack      нажатие на стрелку «назад».
- * @param onShutter   нажатие на кнопку съёмки.
- * @param onFlashChanged  переключение вспышки (true — включена).
- * @param onImagePicked   пользователь выбрал изображение в галерее.
- */
 @Composable
 fun CameraScreen(
     viewfinder: @Composable () -> Unit = {},

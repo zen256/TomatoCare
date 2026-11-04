@@ -82,20 +82,6 @@ private val ShadeDark = Color(0xFF141E14)
 
 private const val DOT_COUNT = 8
 
-/**
- * Экран «Анализ»: загружает снимок, в фоне прогоняет его через конвейер
- * (детекция листа YOLO → обрезка → классификатор культуры) и передаёт исход дальше.
- * Пока идёт обработка, экран просто показывает анимацию.
- *
- * @param imageUri    снимок листа (из камеры или галереи).
- * @param pipelineProvider  возвращает общий экземпляр [LeafPipeline]. Вызывается внутри фоновой
- *                    корутины, поэтому ошибка загрузки модели попадёт в onError, а не уронит приложение.
- * @param modifier    сюда передаётся padding от Scaffold (innerPadding).
- * @param onResult    обработка завершена — сюда приходит исход: лист с диагнозом или «лист не найден»
- *                    (переход на ResultScreen).
- * @param onError     не удалось прочитать снимок или анализ упал.
- * @param onCancel    нажатие на «Отмена» и системную кнопку «назад».
- */
 @Composable
 fun AnalysisScreen(
     imageUri: Uri,
@@ -297,10 +283,6 @@ private fun DotsSpinner(
 /** Максимальная сторона загружаемого снимка: для экрана и входов моделей (640 и 224) этого с запасом хватает. */
 private const val MAX_SIDE = 1280
 
-/**
- * Читает снимок из [uri] в программный Bitmap (на нём работает getPixels в моделях),
- * применяет EXIF-поворот и уменьшает слишком большие фото. Вызывать не на главном потоке.
- */
 internal fun loadBitmap(context: Context, uri: Uri): Bitmap {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
         val source = ImageDecoder.createSource(context.contentResolver, uri)

@@ -95,11 +95,7 @@ fun ResultScreenNoLeafPreview() {
     NoLeafContent(bitmap = null)
 }
 
-/**
- * Экран результата сохранённого анализа.
- *
- * Получает только ID записи и загружает остальные данные из Room.
- */
+
 @Composable
 fun ResultScreen(
     analysisId: Long,

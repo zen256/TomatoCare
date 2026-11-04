@@ -51,7 +51,6 @@ class LeafDetector(context: Context) {
     )
 
     fun detect(bitmap: Bitmap): LeafDetection? {
-        // Letterbox: сохраняем пропорции, поля серые (как в Ultralytics).
         val scale = min(INPUT_SIZE.toFloat() / bitmap.width, INPUT_SIZE.toFloat() / bitmap.height)
         val padX = (INPUT_SIZE - bitmap.width * scale) / 2f
         val padY = (INPUT_SIZE - bitmap.height * scale) / 2f
@@ -70,7 +69,6 @@ class LeafDetector(context: Context) {
         letterboxed.getPixels(pixels, 0, INPUT_SIZE, 0, 0, INPUT_SIZE, INPUT_SIZE)
         letterboxed.recycle()
 
-        // YOLO: RGB, NCHW, только /255, без mean/std.
         val input = FloatArray(3 * plane)
         for (i in 0 until plane) {
             val p = pixels[i]
@@ -111,8 +109,6 @@ class LeafDetector(context: Context) {
             }
         }
     }
-
-    /** Строка: [cx, cy, w, h, conf, cls, angle]. */
     private fun parseEndToEnd(rows: Array<FloatArray>): Candidate? {
         var best: Candidate? = null
         for (r in rows) {
@@ -123,8 +119,6 @@ class LeafDetector(context: Context) {
         }
         return best
     }
-
-    /** Сырой вывод: [4 + nc + 1][anchors] → cx, cy, w, h, scores..., angle. */
     private fun parseRaw(ch: Array<FloatArray>): Candidate? {
         val nc = ch.size - 5
         val anchors = ch[0].size

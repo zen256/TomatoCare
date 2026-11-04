@@ -172,7 +172,7 @@ fun AboutScreen() {
                     .fillMaxWidth()
                     .clickable {
                         uriHandler.openUri(
-                            "https://github.com/zen256/TomatoCare"
+                            "https://github.com/zen256/AgroScan"
                         )
                     }
                     .padding(vertical = 8.dp),

@@ -304,8 +304,6 @@ private fun LastAnalysisCard(
                         color = TextPrimary
                     )
 
-                    Spacer(modifier = Modifier.height(4.dp))
-
                     Text(
                         text = "История анализов появится здесь",
                         fontSize = 12.sp,
@@ -321,23 +319,21 @@ private fun LastAnalysisCard(
                         color = TextPrimary
                     )
 
-                    Spacer(modifier = Modifier.height(4.dp))
-
                     Text(
-                        text = analysis.crop,
+                        text = when (CropType.valueOf(analysis.crop)) {
+                            CropType.TOMATO -> "Томат"
+                            CropType.CORN -> "Кукуруза"
+                            CropType.WHEAT -> "Пшеница"
+                        },
                         fontSize = 13.sp,
                         color = LeafGreen
                     )
-
-                    Spacer(modifier = Modifier.height(4.dp))
 
                     Text(
                         text = "Уверенность: ${"%.1f".format(analysis.confidence * 100)}%",
                         fontSize = 12.sp,
                         color = TextSecondary
                     )
-
-                    Spacer(modifier = Modifier.height(4.dp))
 
                     Text(
                         text = DateFormat.getDateTimeInstance().format(
