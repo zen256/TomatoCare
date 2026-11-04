@@ -48,6 +48,13 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.ui.res.painterResource
 import com.example.tomatocare.R
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
+import com.example.tomatocare.data.AnalysisEntity
+import java.text.DateFormat
+import java.util.Date
 
 import androidx.compose.ui.tooling.preview.Preview
 
@@ -59,7 +66,10 @@ import androidx.compose.ui.tooling.preview.Preview
 @Composable
 fun HomeScreenPreview() {
     HomeScreen(
-        onCameraClick = {}
+        latestAnalysis = null,
+        onCameraClick = {},
+        onImagePicked = {},
+        onLastAnalysisClick = {}
     )
 }
 
@@ -74,14 +84,23 @@ private val CardBorder = Color(0xFFE3E6E3)
 
 @Composable
 fun HomeScreen(
-    onCameraClick: () -> Unit
+    latestAnalysis: AnalysisEntity?,
+    onCameraClick: () -> Unit,
+    onImagePicked: (Uri) -> Unit,
+    onLastAnalysisClick: (Long) -> Unit
 ) {
+    val photoPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickVisualMedia()
+    ) { uri ->
+        uri?.let(onImagePicked)
+    }
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(Background)
             .padding(horizontal = 20.dp) //vertical = 20.dp
     ) {
+        Spacer(modifier = Modifier.height(10.dp))
         Spacer(modifier = Modifier.height(24.dp))
 
         Text(
@@ -94,7 +113,7 @@ fun HomeScreen(
         Spacer(modifier = Modifier.height(6.dp))
 
         Text(
-            text = "Определите болезнь томата\nпо фото листа",
+            text = "Определите болезнь пшеницы,\nтомата или кукурузы по фото листа",
             fontSize = 17.sp,
             lineHeight = 23.sp,
             color = TextSecondary
@@ -139,7 +158,11 @@ fun HomeScreen(
 
         OutlinedButton(
             onClick = {
-                // Выбор изображения из галереи будет подключён следующим шагом.
+                photoPickerLauncher.launch(
+                    PickVisualMediaRequest(
+                        ActivityResultContracts.PickVisualMedia.ImageOnly
+                    )
+                )
             },
             modifier = Modifier
                 .fillMaxWidth()
@@ -180,6 +203,10 @@ fun HomeScreen(
         Spacer(modifier = Modifier.height(10.dp))
 
         LastAnalysisCard(
+            analysis = latestAnalysis,
+            onClick = {
+                latestAnalysis?.let { onLastAnalysisClick(it.id) }
+            },
             modifier = Modifier.fillMaxWidth()
         )
     }
@@ -191,9 +218,9 @@ private fun LeafIllustration(
 ) {
     Box(
         modifier = modifier
-        .size(210.dp)
-        .clip(RoundedCornerShape(14.dp))
-        .background(LeafLight),
+            .size(210.dp)
+            .clip(RoundedCornerShape(14.dp))
+            .background(LeafLight),
         contentAlignment = Alignment.Center
     ) {
         Image(
@@ -208,10 +235,15 @@ private fun LeafIllustration(
 
 @Composable
 private fun LastAnalysisCard(
+    analysis: AnalysisEntity?,
+    onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Card(
-        modifier = modifier,
+        modifier = modifier.clickable(
+            enabled = analysis != null,
+            onClick = onClick
+        ),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
             containerColor = Color.White
@@ -246,42 +278,79 @@ private fun LastAnalysisCard(
             Column(
                 modifier = Modifier.weight(1f)
             ) {
-                Text(
-                    text = "Пока нет анализов",
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = TextPrimary
-                )
-
-                Spacer(modifier = Modifier.height(4.dp))
-
-                Row(
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Schedule,
-                        contentDescription = null,
-                        tint = TextSecondary,
-                        modifier = Modifier.size(15.dp)
+                if (analysis == null) {
+                    Text(
+                        text = "Пока нет анализов",
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = TextPrimary
                     )
 
-                    Spacer(modifier = Modifier.size(5.dp))
+                    Spacer(modifier = Modifier.height(4.dp))
+
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Schedule,
+                            contentDescription = null,
+                            tint = TextSecondary,
+                            modifier = Modifier.size(15.dp)
+                        )
+
+                        Spacer(modifier = Modifier.size(5.dp))
+
+                        Text(
+                            text = "История анализов появится здесь",
+                            fontSize = 12.sp,
+                            lineHeight = 12.sp,
+                            color = TextSecondary
+                        )
+                    }
+                } else {
+                    Text(
+                        text = analysis.diagnosis.replace('_', ' '),
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = TextPrimary
+                    )
+
+                    Spacer(modifier = Modifier.height(4.dp))
 
                     Text(
-                        text = "История анализов появится здесь",
+                        text = analysis.crop,
+                        fontSize = 13.sp,
+                        color = LeafGreen
+                    )
+
+                    Spacer(modifier = Modifier.height(4.dp))
+
+                    Text(
+                        text = "Уверенность: ${"%.1f".format(analysis.confidence * 100)}%",
                         fontSize = 12.sp,
-                        lineHeight = 12.sp,
+                        color = TextSecondary
+                    )
+
+                    Spacer(modifier = Modifier.height(4.dp))
+
+                    Text(
+                        text = DateFormat.getDateTimeInstance().format(
+                            Date(analysis.createdAt)
+                        ),
+                        fontSize = 12.sp,
                         color = TextSecondary
                     )
                 }
             }
 
-            Icon(
-                imageVector = Icons.Default.ChevronRight,
-                contentDescription = null,
-                tint = TextSecondary,
-                modifier = Modifier.size(24.dp)
-            )
+            if (analysis != null) {
+                Icon(
+                    imageVector = Icons.Default.ChevronRight,
+                    contentDescription = "Открыть результат",
+                    tint = TextSecondary,
+                    modifier = Modifier.size(24.dp)
+                )
+            }
         }
     }
 }

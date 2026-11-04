@@ -55,8 +55,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.tomatocare.ml.ClassificationResult
-import com.example.tomatocare.ml.TomatoClassifier
+import com.example.tomatocare.ml.AnalysisOutcome
+import com.example.tomatocare.ml.LeafPipeline
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -83,23 +83,25 @@ private val ShadeDark = Color(0xFF141E14)
 private const val DOT_COUNT = 8
 
 /**
- * Экран «Анализ»: загружает снимок, в фоне прогоняет его через нейросеть и
- * передаёт результат дальше. Пока идёт обработка, экран просто показывает анимацию.
+ * Экран «Анализ»: загружает снимок, в фоне прогоняет его через конвейер
+ * (детекция листа YOLO → обрезка → классификатор культуры) и передаёт исход дальше.
+ * Пока идёт обработка, экран просто показывает анимацию.
  *
  * @param imageUri    снимок листа (из камеры или галереи).
- * @param classifierProvider  возвращает общий экземпляр [TomatoClassifier]. Вызывается внутри фоновой
+ * @param pipelineProvider  возвращает общий экземпляр [LeafPipeline]. Вызывается внутри фоновой
  *                    корутины, поэтому ошибка загрузки модели попадёт в onError, а не уронит приложение.
  * @param modifier    сюда передаётся padding от Scaffold (innerPadding).
- * @param onResult    обработка завершена — сюда приходит результат (переход на ResultScreen).
- * @param onError     не удалось прочитать снимок или классификация упала.
+ * @param onResult    обработка завершена — сюда приходит исход: лист с диагнозом или «лист не найден»
+ *                    (переход на ResultScreen).
+ * @param onError     не удалось прочитать снимок или анализ упал.
  * @param onCancel    нажатие на «Отмена» и системную кнопку «назад».
  */
 @Composable
 fun AnalysisScreen(
     imageUri: Uri,
-    classifierProvider: () -> TomatoClassifier,
+    pipelineProvider: () -> LeafPipeline,
     modifier: Modifier = Modifier,
-    onResult: (ClassificationResult) -> Unit = {},
+    onResult: (AnalysisOutcome) -> Unit = {},
     onError: (Throwable) -> Unit = {},
     onCancel: () -> Unit = {}
 ) {
@@ -117,8 +119,8 @@ fun AnalysisScreen(
             val loaded = withContext(Dispatchers.IO) { loadBitmap(context, imageUri) }
             bitmap = loaded
 
-            val result = withContext(Dispatchers.Default) { classifierProvider().classify(loaded) }
-            currentOnResult(result)
+            val outcome = withContext(Dispatchers.Default) { pipelineProvider().analyze(loaded) }
+            currentOnResult(outcome)
         } catch (e: CancellationException) {
             throw e
         } catch (e: Throwable) {
@@ -149,6 +151,7 @@ private fun AnalysisContent(
             .background(Background)
             .padding(horizontal = 20.dp)
     ) {
+        Spacer(modifier = Modifier.height(10.dp))
         Spacer(modifier = Modifier.height(24.dp))
 
         AnalysisPhoto(
@@ -291,11 +294,11 @@ private fun DotsSpinner(
     }
 }
 
-/** Максимальная сторона загружаемого снимка: для экрана и 224×224 модели этого с запасом хватает. */
+/** Максимальная сторона загружаемого снимка: для экрана и входов моделей (640 и 224) этого с запасом хватает. */
 private const val MAX_SIDE = 1280
 
 /**
- * Читает снимок из [uri] в программный Bitmap (на нём работает getPixel в классификаторе),
+ * Читает снимок из [uri] в программный Bitmap (на нём работает getPixels в моделях),
  * применяет EXIF-поворот и уменьшает слишком большие фото. Вызывать не на главном потоке.
  */
 internal fun loadBitmap(context: Context, uri: Uri): Bitmap {

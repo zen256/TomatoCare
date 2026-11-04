@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.ksp)
 }
 
 android {
@@ -52,6 +53,9 @@ dependencies {
     implementation("androidx.camera:camera-view:1.5.0")
     implementation("com.microsoft.onnxruntime:onnxruntime-android:1.22.0")
     implementation("androidx.exifinterface:exifinterface:1.3.7")
+    implementation(libs.androidx.room.runtime)
+    implementation(libs.androidx.room.ktx)
+    ksp(libs.androidx.room.compiler)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     androidTestImplementation(libs.androidx.espresso.core)

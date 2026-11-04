@@ -8,43 +8,83 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.tomatocare.ml.ClassificationResult
-import com.example.tomatocare.ml.TomatoClassifier
+import com.example.tomatocare.data.AnalysisEntity
+import com.example.tomatocare.data.AnalysisRepository
+import com.example.tomatocare.data.TomatoDatabase
+import com.example.tomatocare.ml.AnalysisOutcome
+import com.example.tomatocare.ml.LeafPipeline
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
-/**
- * Общее состояние для экранов камеры, анализа и результата.
- * Создаётся один раз на Activity, поэтому переживает повороты экрана и навигацию.
- */
 class TomatoViewModel(application: Application) : AndroidViewModel(application) {
 
-    /** Выбранный или снятый снимок. Заполняется на CameraScreen, читается на AnalysisScreen. */
     var imageUri by mutableStateOf<Uri?>(null)
 
-    /** Результат нейросети. Заполняется после анализа, читается на ResultScreen. */
-    var result by mutableStateOf<ClassificationResult?>(null)
+    // Используется только для результата NoLeaf, который не сохраняется в БД.
+    var result by mutableStateOf<AnalysisOutcome?>(null)
 
-    // Создание классификатора читает весь ONNX-файл, поэтому он создаётся один раз и лениво.
-    private val classifierDelegate = lazy { TomatoClassifier(getApplication()) }
-    val classifier: TomatoClassifier by classifierDelegate
+    val pipeline = LeafPipeline(application)
+
+    private val database = TomatoDatabase.getInstance(application)
+
+    private val repository = AnalysisRepository(
+        application,
+        database.analysisDao()
+    )
+
+    val analyses: Flow<List<AnalysisEntity>> = repository.analyses
+
+    fun observeAnalysis(id: Long): Flow<AnalysisEntity?> {
+        return repository.observeById(id)
+    }
+
+    fun saveAnalysis(
+        uri: Uri,
+        outcome: AnalysisOutcome.Leaf,
+        onSaved: (Long) -> Unit,
+        onError: (Throwable) -> Unit
+    ) {
+        viewModelScope.launch {
+            try {
+                val id = withContext(Dispatchers.IO) {
+                    repository.save(uri, outcome)
+                }
+
+                onSaved(id)
+            } catch (e: Exception) {
+                Log.e("TomatoViewModel", "Не удалось сохранить анализ", e)
+                onError(e)
+            }
+        }
+    }
+
+    fun deleteAnalysis(id: Long) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                repository.delete(id)
+            } catch (e: Exception) {
+                Log.e("TomatoViewModel", "Не удалось удалить анализ", e)
+            }
+        }
+    }
 
     init {
-        // Прогреваем модель в фоне, чтобы к входу на экран анализа она уже была загружена
-        // и главный поток не подвисал на чтении файла.
-        // Ошибку ловим здесь: необработанное исключение в корутине роняет приложение при запуске.
         viewModelScope.launch(Dispatchers.Default) {
             try {
-                classifier
+                pipeline.warmUp()
             } catch (e: Throwable) {
-                Log.e("TomatoViewModel", "Не удалось загрузить модель", e)
+                Log.e(
+                    "TomatoViewModel",
+                    "Не удалось загрузить модель детектора",
+                    e
+                )
             }
         }
     }
 
     override fun onCleared() {
-        if (classifierDelegate.isInitialized()) {
-            classifier.close()
-        }
+        pipeline.close()
     }
 }

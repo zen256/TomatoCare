@@ -1,7 +1,7 @@
+
 package com.example.tomatocare.navigation
 
 import android.widget.Toast
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
@@ -21,19 +21,26 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-
+import androidx.navigation.navArgument
 import com.example.tomatocare.TomatoViewModel
+import com.example.tomatocare.ml.AnalysisOutcome
 import com.example.tomatocare.ui.screens.AboutScreen
 import com.example.tomatocare.ui.screens.AnalysisScreen
 import com.example.tomatocare.ui.screens.CameraScreen
 import com.example.tomatocare.ui.screens.DiseaseDetailsScreen
 import com.example.tomatocare.ui.screens.HistoryScreen
 import com.example.tomatocare.ui.screens.HomeScreen
+import com.example.tomatocare.ui.screens.NoLeafResultScreen
 import com.example.tomatocare.ui.screens.ResultScreen
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.displayCutout
+import androidx.compose.runtime.collectAsState
+import com.example.tomatocare.data.AnalysisEntity
 
 private val TomatoRed = Color(0xFFB3261D)
 private val TextSecondary = Color(0xFF6B716B)
@@ -43,7 +50,7 @@ fun AppNavigation() {
     val navController = rememberNavController()
     val context = LocalContext.current
 
-    // Общий ViewModel: хранит снимок, результат и нейросеть для экранов camera/analysis/result.
+    // Общий ViewModel для экранов камеры, анализа, результата и истории.
     val viewModel: TomatoViewModel = viewModel()
 
     val bottomItems = listOf(
@@ -74,10 +81,10 @@ fun AppNavigation() {
     )
 
     Scaffold(
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
         bottomBar = {
             if (showBottomBar) {
                 NavigationBar(
-                    modifier = Modifier.height(80.dp),
                     containerColor = Color.White,
                     tonalElevation = 0.dp
                 ) {
@@ -116,16 +123,26 @@ fun AppNavigation() {
         }
     ) { innerPadding ->
 
-        // innerPadding применяется один раз здесь, поэтому экраны его повторно не получают.
         NavHost(
             navController = navController,
             startDestination = "home",
             modifier = Modifier.padding(innerPadding)
         ) {
             composable("home") {
+                val analyses by viewModel.analyses.collectAsState(initial = emptyList())
+                val latestAnalysis = analyses.firstOrNull()
+
                 HomeScreen(
+                    latestAnalysis = latestAnalysis,
                     onCameraClick = {
                         navController.navigate("camera")
+                    },
+                    onImagePicked = { uri ->
+                        viewModel.imageUri = uri
+                        navController.navigate("analysis")
+                    },
+                    onLastAnalysisClick = { id ->
+                        navController.navigate("result/$id")
                     }
                 )
             }
@@ -135,12 +152,10 @@ fun AppNavigation() {
                     onBack = {
                         navController.popBackStack()
                     },
-
                     onPhotoCaptured = { uri ->
                         viewModel.imageUri = uri
                         navController.navigate("analysis")
                     },
-
                     onImagePicked = { uri ->
                         viewModel.imageUri = uri
                         navController.navigate("analysis")
@@ -154,20 +169,50 @@ fun AppNavigation() {
                 if (uri != null) {
                     AnalysisScreen(
                         imageUri = uri,
-                        classifierProvider = { viewModel.classifier },
-                        onResult = { result ->
-                            viewModel.result = result
-                            navController.navigate("result") {
-                                popUpTo("analysis") { inclusive = true }
+                        pipelineProvider = { viewModel.pipeline },
+                        onResult = { outcome ->
+                            when (outcome) {
+                                is AnalysisOutcome.Leaf -> {
+                                    viewModel.saveAnalysis(
+                                        uri = uri,
+                                        outcome = outcome,
+                                        onSaved = { id ->
+                                            navController.navigate("result/$id") {
+                                                popUpTo("analysis") {
+                                                    inclusive = true
+                                                }
+                                            }
+                                        },
+                                        onError = {
+                                            Toast.makeText(
+                                                context,
+                                                "Не удалось сохранить результат анализа",
+                                                Toast.LENGTH_LONG
+                                            ).show()
+
+                                            navController.popBackStack()
+                                        }
+                                    )
+                                }
+
+                                AnalysisOutcome.NoLeaf -> {
+                                    viewModel.result = outcome
+
+                                    navController.navigate("result_no_leaf") {
+                                        popUpTo("analysis") {
+                                            inclusive = true
+                                        }
+                                    }
+                                }
                             }
                         },
                         onError = {
-                            // Подробности ошибки пишутся в Logcat (тег AnalysisScreen).
                             Toast.makeText(
                                 context,
                                 "Не удалось проанализировать фото. Попробуйте ещё раз",
                                 Toast.LENGTH_LONG
                             ).show()
+
                             navController.popBackStack()
                         },
                         onCancel = {
@@ -175,31 +220,39 @@ fun AppNavigation() {
                         }
                     )
                 } else {
-                    // Снимка нет (например, процесс был перезапущен) — возвращаемся назад.
                     LaunchedEffect(Unit) {
                         navController.popBackStack()
                     }
                 }
             }
 
-            composable("result") {
-                val result = viewModel.result
+            // Результат сохранённого анализа.
+            composable(
+                route = "result/{analysisId}",
+                arguments = listOf(
+                    navArgument("analysisId") {
+                        type = NavType.LongType
+                    }
+                )
+            ) { backStackEntry ->
 
-                if (result != null) {
+                val analysisId = backStackEntry.arguments
+                    ?.getLong("analysisId")
+
+                if (analysisId != null) {
                     ResultScreen(
-                        result = result,
-                        imageUri = viewModel.imageUri,
+                        analysisId = analysisId,
+                        viewModel = viewModel,
                         onDetailsClick = {
                             navController.navigate("disease_details")
                         },
                         onNewPhoto = {
-                            // Сразу на камеру; экран результата убираем из стека.
                             navController.navigate("camera") {
                                 popUpTo("home")
                             }
                         },
                         onBack = {
-                            navController.popBackStack("home", inclusive = false)
+                            navController.popBackStack()
                         }
                     )
                 } else {
@@ -209,12 +262,33 @@ fun AppNavigation() {
                 }
             }
 
+            // Результат, когда YOLO не обнаружила лист.
+            // В Room такой результат не сохраняется.
+            composable("result_no_leaf") {
+                NoLeafResultScreen(
+                    imageUri = viewModel.imageUri,
+                    onNewPhoto = {
+                        navController.navigate("camera") {
+                            popUpTo("home")
+                        }
+                    },
+                    onBack = {
+                        navController.popBackStack()
+                    }
+                )
+            }
+
             composable("disease_details") {
                 DiseaseDetailsScreen()
             }
 
             composable("history") {
-                HistoryScreen()
+                HistoryScreen(
+                    viewModel = viewModel,
+                    onAnalysisClick = { id ->
+                        navController.navigate("result/$id")
+                    }
+                )
             }
 
             composable("about") {
